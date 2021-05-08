@@ -1,6 +1,6 @@
 #include "simon_leds.hpp"
 
-SimonLeds::SimonLeds(int number) {
+SimonLeds::SimonLeds() {
 
     outLed[0] = new GPIO(LED_GPIO::RED_LED);
     outLed[1] = new GPIO(LED_GPIO::GREEN_LED);
