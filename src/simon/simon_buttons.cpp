@@ -4,8 +4,6 @@
 
 SimonButtons::SimonButtons() {
 
-    srand (time(NULL));
-
     inButton[0] = new GPIO(BUTTON_GPIO::RED_BUTTON);
     inButton[1] = new GPIO(BUTTON_GPIO::GREEN_BUTTON);
     inButton[2] = new GPIO(BUTTON_GPIO::YELLOW_BUTTON);
