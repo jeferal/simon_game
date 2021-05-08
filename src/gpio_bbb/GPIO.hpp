@@ -1,7 +1,10 @@
-#ifndef GPIO_H_
-#define GPIO_H_
-#include<string>
-#include<fstream>
+#ifndef GPIO_HPP_
+#define GPIO_HPP_
+
+#include <string>
+#include <fstream>
+#include "../util/util.hpp"
+
 using std::string;
 using std::ofstream;
 
@@ -15,6 +18,7 @@ typedef int (*CallbackType)(int);
  * @class GPIO
  * @brief GPIO class for input and output functionality on a single GPIO pin
  */
+
 class GPIO {
 public:
 	enum DIRECTION{ INPUT, OUTPUT };
@@ -83,4 +87,4 @@ void* threadedToggle(void *value);
 
 } /* namespace BBB */
 
-#endif /* GPIO_H_ */
+#endif /* GPIO_HPP_ */

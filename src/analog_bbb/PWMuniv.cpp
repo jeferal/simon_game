@@ -7,8 +7,7 @@
  *
  */
 
-#include "PWMuniv.h"
-#include "util.h"
+#include "PWMuniv.hpp"
 
 #include <iostream>
 #include <cstdlib>

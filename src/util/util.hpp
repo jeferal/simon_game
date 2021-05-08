@@ -1,7 +1,9 @@
-#ifndef UTIL_H_
-#define UTIL_H_
+#ifndef UTIL_HPP_
+#define UTIL_HPP_
 #include <string>
+
 using std::string;
+using namespace std;
 
 
 namespace BBB {
@@ -20,4 +22,4 @@ long getCurrentMicroseconds();
 
 } /* namespace BBB */
 
-#endif /* UTIL_H_ */
+#endif /* UTIL_HPP_ */
