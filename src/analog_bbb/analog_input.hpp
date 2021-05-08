@@ -2,7 +2,7 @@
 #define ANALOG_IN_HPP
 #define ADC_PATH "/sys/bus/iio/devices/iio:device0/in_voltage"
 
-#include "util/util.hpp"
+#include "../util/util.hpp"
 
 #include <iostream>
 #include <unistd.h>

@@ -1,5 +1,4 @@
 #include "analog_input.hpp"
-#include "../util/util.hpp"
 
 #include <iostream>
 #include <unistd.h>

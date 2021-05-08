@@ -1,3 +1,6 @@
+#ifndef STATE_MONITOR_HPP_
+#define STATE_MONITOR_HPP_
+
 #include <stdio.h>
 #include <vector>
 #include <unistd.h>
@@ -27,3 +30,5 @@ class StateMonitor {
         int addStateChangeListener(int fromState, int toState, void* (*handle)(int,int));
 
 };
+
+#endif //STATE_MONITOR_HPP_
