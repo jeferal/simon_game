@@ -13,24 +13,13 @@ int main() {
 
     std::cout << "Starting program" << std::endl;
 
-    SimonLeds simon_leds_out(1);
+    SimonLeds simon_leds_out;
 
     while(true) {
-        simon_leds_out.outLed1->setValue(GPIO::HIGH);
+        SimonLeds::COLOR color;
+        color = simon_leds_out.turn_on_random();
         usleep(1000000);
-        simon_leds_out.outLed1->setValue(GPIO::LOW);
-        usleep(1000000);
-        simon_leds_out.outLed2->setValue(GPIO::HIGH);
-        usleep(1000000);
-        simon_leds_out.outLed2->setValue(GPIO::LOW);
-        usleep(1000000);
-        simon_leds_out.outLed3->setValue(GPIO::HIGH);
-        usleep(1000000);
-        simon_leds_out.outLed3->setValue(GPIO::LOW);
-        usleep(1000000);
-        simon_leds_out.outLed4->setValue(GPIO::HIGH);
-        usleep(1000000);
-        simon_leds_out.outLed4->setValue(GPIO::LOW);
+        simon_leds_out.turn_off(color);
         usleep(1000000);
     }
 

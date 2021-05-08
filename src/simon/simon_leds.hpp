@@ -5,17 +5,21 @@
 
 using namespace BBB;
 
+
 class SimonLeds {
+    public:
+        enum COLOR{ RED=0, GREEN=1, YELLOW=2, BLUE=3 };
 
-
+    private:
+        enum LED_GPIO{ RED_LED=60, GREEN_LED=31, YELLOW_LED=50, BLUE_LED=48};
+        GPIO *outLed[4];
+        
     public:
 
-        GPIO *outLed1=NULL;
-        GPIO *outLed2=NULL;
-        GPIO *outLed3=NULL;
-        GPIO *outLed4=NULL;
-
-        SimonLeds(int number);
+        SimonLeds();
+        void turn_on(COLOR color);
+        void turn_off(COLOR color);
+        SimonLeds::COLOR turn_on_random();
 
 };
 

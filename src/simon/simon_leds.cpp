@@ -2,18 +2,33 @@
 
 SimonLeds::SimonLeds(int number) {
 
-    outLed1 = new GPIO(60);
-    outLed2 = new GPIO(31);
-    outLed3 = new GPIO(50);
-    outLed4 = new GPIO(48);
+    outLed[0] = new GPIO(LED_GPIO::RED_LED);
+    outLed[1] = new GPIO(LED_GPIO::GREEN_LED);
+    outLed[2] = new GPIO(LED_GPIO::YELLOW_LED);
+    outLed[3] = new GPIO(LED_GPIO::BLUE_LED);
 
-    outLed1->setDirection(GPIO::OUTPUT);
-    outLed2->setDirection(GPIO::OUTPUT);
-    outLed3->setDirection(GPIO::OUTPUT);
-    outLed4->setDirection(GPIO::OUTPUT);
+    outLed[0]->setDirection(GPIO::OUTPUT);
+    outLed[1]->setDirection(GPIO::OUTPUT);
+    outLed[2]->setDirection(GPIO::OUTPUT);
+    outLed[3]->setDirection(GPIO::OUTPUT);
 
-    outLed1->setValue(GPIO::LOW);
-    outLed2->setValue(GPIO::LOW);
-    outLed3->setValue(GPIO::LOW);
-    outLed4->setValue(GPIO::LOW);
+    turn_off(COLOR::RED);
+    turn_off(COLOR::GREEN);
+    turn_off(COLOR::YELLOW);
+    turn_off(COLOR::BLUE);
+
+}
+
+void SimonLeds::turn_on(COLOR color) {
+    outLed[color]->setValue(GPIO::HIGH);
+}
+
+void SimonLeds::turn_off(COLOR color) {
+    outLed[color]->setValue(GPIO::LOW);
+}
+
+SimonLeds::COLOR SimonLeds::turn_on_random() {
+    COLOR rand_color = COLOR(rand()%4);
+    turn_on(rand_color);
+    return rand_color;
 }
