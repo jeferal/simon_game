@@ -3,7 +3,8 @@
 ## Compilation
 
 ```bash
-arm-linux-gnueabihf-g++-8 src/test.cpp -o build/test -lpthread
+cd src
+make clean all
 ```
 ## Copy executable to BBB
 ```bash
