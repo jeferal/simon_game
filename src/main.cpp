@@ -14,11 +14,6 @@
 #define INTRODUCE_STATE 2
 #define MAX_SEQUENCE 100
 
-/*
-arm-linux-gnueabihf-g++-8 src/main.cpp src/analog_bbb/analog_input.cpp src/state_monitor/state_monitor.cpp src/state_monitor/thread_conf.cpp src/util/util.cpp src/analog_bbb/PWMuniv.cpp src/gpio_bbb/GPIO.cpp src/simon/simon_leds.cpp src/simon/simon_buttons.cpp -o build/simon_machine -lpthread
-
-scp build/test root@192.168.1.111:/root/targets/
-*/
 
 StateMonitor stateManager;
 SimonLeds simon_leds_out;
@@ -97,6 +92,7 @@ void *introduce_thread(void *param) {
         int state = stateManager.waitState(cfgPassed);
         //Read all buttons
         std::vector<bool> status = simon_buttons_in.read_status(true);
+        simon_leds_out.show_array(status);
         std::vector<bool> rising_edges(4);
 
         for(int i=0; i<4; i++) {
@@ -132,6 +128,7 @@ void *changeStateHandler(int stFrom, int stTo) {
     printf("********************** Cambio de estado: desde %d a %d.\n",stFrom,stTo);
     printf("N=%d", n);
     printf("Leds in the sequence: ");
+    simon_leds_out.turn_all_off();
     for(int i=0; i<n; i++) {
         std::cout << ", " << current_sequence[i] << std::endl;
     }

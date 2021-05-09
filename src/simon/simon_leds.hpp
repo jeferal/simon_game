@@ -3,6 +3,8 @@
 
 #include "../gpio_bbb/GPIO.hpp"
 
+#include <vector>
+
 using namespace BBB;
 
 
@@ -19,6 +21,9 @@ class SimonLeds {
         SimonLeds();
         void turn_on(COLOR color);
         void turn_off(COLOR color);
+        void show_array(const std::vector<bool> &status);
+        void turn_all_off();
+
         SimonLeds::COLOR turn_on_random();
 
 };

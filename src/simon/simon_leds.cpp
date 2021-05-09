@@ -28,6 +28,21 @@ void SimonLeds::turn_off(COLOR color) {
     outLed[color]->setValue(GPIO::LOW);
 }
 
+void SimonLeds::turn_all_off() {
+    for(int i=0; i<4; i++)
+        turn_off((COLOR)i);
+}
+
+
+void SimonLeds::show_array(const std::vector<bool> &status) {
+    for(int i=0; i<4; i++) {
+        if(status[i])
+            turn_on((COLOR)i);
+        else
+            turn_off((COLOR)i);
+    }
+} 
+
 SimonLeds::COLOR SimonLeds::turn_on_random() {
     COLOR rand_color = COLOR(rand()%4);
     turn_on(rand_color);
