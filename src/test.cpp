@@ -51,10 +51,12 @@ void *show_thread(void *param) {
         SimonLeds::COLOR current_color;
         if(iter < n-1) {
             //Show the vector
+            printf("Showing previous led");
             current_color = current_sequence[iter];
             simon_leds_out.turn_on(current_color);
         } else {
             //Show random and store it
+            printf("Showing random led\n");
             current_color = simon_leds_out.turn_on_random();
             current_sequence[iter] = current_color;
         }
@@ -75,6 +77,8 @@ void *show_thread(void *param) {
 
         if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
             printf("INIT BUTTON PRESSED!!!\n");
+            n=1;
+            current_sequence.clear();
             stateManager.changeState(INIT_STATE);
         } 
     }
@@ -84,34 +88,54 @@ void *introduce_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
     long longPassed = (long) cfgPassed->getArg();
     int iter = 0;
+    std::vector<bool> pre_status(4);
+    pre_status[0] = false;
+    pre_status[1] = false;
+    pre_status[2] = false;
+    pre_status[3] = false;
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
         //Read all buttons
         std::vector<bool> status = simon_buttons_in.read_status(true);
-        usleep(10000);
+        std::vector<bool> rising_edges(4);
+
+        for(int i=0; i<4; i++) {
+            rising_edges[i] = status[i]==true && pre_status[i]==false;
+        }
+
+        //printf("LED NUMBER: %d",(int)current_sequence[iter]);
+
+        if(rising_edges[(int)current_sequence[iter]]==true) {
+            iter++;
+            printf("CORRECT BUTTON!\n");
+        }
 
         if(iter == n-1) {
             printf("SEQUENCE COMPLETED!!\n");
             iter=0;
             stateManager.changeState(SHOW_STATE);
         }
-        printf("LED NUMBER: %d",(int)current_sequence[iter]);
-
-        if(status[(int)current_sequence[iter]]) {
-            iter++;
-            printf("CORRECT BUTTON!\n");
-        }
 
         if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
             printf("INIT BUTTON PRESSED!!!\n");
             stateManager.changeState(INIT_STATE);
         }
+
+        pre_status = status;
+
+        usleep(10000);
     }
 }
 //void *pause_thread();
 
 void *changeStateHandler(int stFrom, int stTo) {
     printf("********************** Cambio de estado: desde %d a %d.\n",stFrom,stTo);
+    printf("N=%d", n);
+    printf("Leds in the sequence: ");
+    for(int i=0; i<n; i++) {
+        std::cout << ", " << current_sequence[i] << std::endl;
+    }
+    usleep(2000000);
     return(NULL);
 }
 
