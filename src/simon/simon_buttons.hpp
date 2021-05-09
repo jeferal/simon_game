@@ -14,12 +14,11 @@ int pause_event_handler(int arg);
 
 class SimonButtons {
     public:
-        enum COLOR{ RED=0, GREEN=1, YELLOW=2, BLUE=3 };
+        enum COLOR{ RED=0, GREEN=1, YELLOW=2, BLUE=3, INIT=4, PAUSE=5 };
 
     private:
         enum BUTTON_GPIO{ RED_BUTTON=30, GREEN_BUTTON=51, YELLOW_BUTTON=5, BLUE_BUTTON=4, INIT_BUTTON=45, PAUSE_BUTTON=44};
-        GPIO *inButton[4];
-        GPIO *initButton, *pauseButton;
+        GPIO *inButton[6];
         
     public:
 

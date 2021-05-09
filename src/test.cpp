@@ -12,6 +12,7 @@
 #define INIT_STATE 0
 #define SHOW_STATE 1
 #define INTRODUCE_STATE 2
+#define MAX_SEQUENCE 100
 
 /*
 arm-linux-gnueabihf-g++-8 src/test.cpp src/analog_bbb/analog_input.cpp src/state_monitor/state_monitor.cpp src/state_monitor/thread_conf.cpp src/util/util.cpp src/analog_bbb/PWMuniv.cpp src/gpio_bbb/GPIO.cpp src/simon/simon_leds.cpp src/simon/simon_buttons.cpp -o build/test -lpthread
@@ -22,6 +23,8 @@ scp build/test root@192.168.1.111:/root/targets/
 StateMonitor stateManager;
 SimonLeds simon_leds_out;
 SimonButtons simon_buttons_in;
+int n=1;
+std::vector<SimonLeds::COLOR> current_sequence(MAX_SEQUENCE);
 
 void *init_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
@@ -30,7 +33,11 @@ void *init_thread(void *param) {
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
         printf("INIT STATE\n");
-        //Do something
+
+        if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
+            printf("INIT BUTTON PRESSED!!!\n");
+            stateManager.changeState(SHOW_STATE);
+        }
         usleep(600000);
     }
 }
@@ -41,11 +48,35 @@ void *show_thread(void *param) {
     int iter = 0;
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
-        printf("SHOWING RANDOM COLOR\n");
-        SimonLeds::COLOR color = simon_leds_out.turn_on_random();
-        usleep(200000);
-        simon_leds_out.turn_off(color);
-        usleep(200000);
+        SimonLeds::COLOR current_color;
+        if(iter < n-1) {
+            //Show the vector
+            current_color = current_sequence[iter];
+            simon_leds_out.turn_on(current_color);
+        } else {
+            //Show random and store it
+            current_color = simon_leds_out.turn_on_random();
+            current_sequence[iter] = current_color;
+        }
+        //Time on
+        usleep(1000000);
+
+        simon_leds_out.turn_off(current_color);
+        //Time off
+        usleep(1000000);
+        iter++;
+
+        if(iter==n) {
+            printf("SECUENCIA TERMINADA\n");
+            stateManager.changeState(INTRODUCE_STATE);
+            iter=0;
+            n++;
+        }
+
+        if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
+            printf("INIT BUTTON PRESSED!!!\n");
+            stateManager.changeState(INIT_STATE);
+        } 
     }
 }
 
@@ -55,10 +86,26 @@ void *introduce_thread(void *param) {
     int iter = 0;
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
-        printf("READING BUTTONS\n");
+        //Read all buttons
         std::vector<bool> status = simon_buttons_in.read_status(true);
-        //Do something
-        usleep(200000);
+        usleep(10000);
+
+        if(iter == n-1) {
+            printf("SEQUENCE COMPLETED!!\n");
+            iter=0;
+            stateManager.changeState(SHOW_STATE);
+        }
+        printf("LED NUMBER: %d",(int)current_sequence[iter]);
+
+        if(status[(int)current_sequence[iter]]) {
+            iter++;
+            printf("CORRECT BUTTON!\n");
+        }
+
+        if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
+            printf("INIT BUTTON PRESSED!!!\n");
+            stateManager.changeState(INIT_STATE);
+        }
     }
 }
 //void *pause_thread();
@@ -101,12 +148,9 @@ int main() {
     pthread_create(&th03,&attr,introduce_thread,(void*)&h11Cfg);
 
     int myState = 0;
+    stateManager.changeState(INIT_STATE);
 
-    while(true) {
-        myState = (stateManager.getState() + 1) % 3;
-        stateManager.changeState(myState);
-        usleep(5000000);
-    }
+    while(true);    
 
     pthread_join(th01,NULL);
     pthread_join(th02,NULL);
