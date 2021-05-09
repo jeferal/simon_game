@@ -3,7 +3,6 @@
 ## Compilation
 
 ```bash
-cd src
 make clean all
 ```
 ## Copy executable to BBB
