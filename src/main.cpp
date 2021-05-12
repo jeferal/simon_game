@@ -21,6 +21,7 @@ StateMonitor stateManager;
 SimonLeds simon_leds_out;
 SimonButtons simon_buttons_in;
 SimonLedStrip simon_led_strip("192.168.1.117",80);
+SimonDial simon_dial_difficulty;
 int vel_show = 1000000;
 int time_out = 200;
 bool use_leds=false;
@@ -62,6 +63,7 @@ void *show_thread(void *param) {
             current_color = simon_leds_out.turn_on_random();
             current_sequence[iter] = current_color;
         }
+        vel_show = 1172.16*simon_dial_difficulty.get_value() + 1000000/5;
         //Time on
         usleep(vel_show);
 
@@ -216,7 +218,7 @@ void *starting_game(int stFrom, int stTo) {
 void *dial_velocity(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
     long longPassed = (long) cfgPassed->getArg();
-    SimonDial simon_dial_difficulty(0,BBB::PWM::P9_22);
+    
     for(;;) {
         int state = stateManager.waitState(cfgPassed);
         int value = simon_dial_difficulty.get_value();
