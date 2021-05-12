@@ -23,6 +23,7 @@ class SimonLeds {
         void turn_off(COLOR color);
         void show_array(const std::vector<bool> &status);
         void turn_all_off();
+        void turn_all_on();
 
         SimonLeds::COLOR turn_on_random();
 

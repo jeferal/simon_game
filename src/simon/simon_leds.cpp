@@ -33,6 +33,11 @@ void SimonLeds::turn_all_off() {
         turn_off((COLOR)i);
 }
 
+void SimonLeds::turn_all_on() {
+    for(int i=0; i<4; i++)
+        turn_on((COLOR)i);
+}
+
 
 void SimonLeds::show_array(const std::vector<bool> &status) {
     for(int i=0; i<4; i++) {

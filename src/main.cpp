@@ -21,7 +21,8 @@ SimonLeds simon_leds_out;
 SimonButtons simon_buttons_in;
 SimonLedStrip simon_led_strip("192.168.1.117",80);
 int vel_show = 1000000;
-bool use_leds;
+int time_out = 200;
+bool use_leds=false;
 
 int n=1;
 std::vector<SimonLeds::COLOR> current_sequence(MAX_SEQUENCE);
@@ -72,12 +73,15 @@ void *show_thread(void *param) {
             printf("SECUENCIA TERMINADA\n");
             stateManager.changeState(INTRODUCE_STATE);
             iter=0;
+            continue;
         }
 
         if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
             printf("INIT BUTTON PRESSED!!!\n");
             current_sequence.clear();
             stateManager.changeState(INIT_STATE);
+            iter=0;
+            continue;
         } 
     }
 }
@@ -85,7 +89,8 @@ void *show_thread(void *param) {
 void *introduce_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
     long longPassed = (long) cfgPassed->getArg();
-    int iter = 0;
+    int iter=0;
+    int iter_time_out=0;
     std::vector<bool> pre_status(4);
     pre_status[0] = false;
     pre_status[1] = false;
@@ -102,19 +107,27 @@ void *introduce_thread(void *param) {
             rising_edges[i] = status[i]==true && pre_status[i]==false;
         }
 
+        pre_status = status;
+        
         int current_led = (int)current_sequence[iter];
+        std::cout << "CURRENT LED: " << current_led << "and iter: " << iter << "and led[0]: " << current_sequence[0]<< std::endl;
 
         for(int i=0; i<4; i++) {
             if(i==current_led) {
                 if(rising_edges[current_led]==true) {
                     iter++;
                     std::cout << "Iter: " << iter << ", n-1: " << n-1 << std::endl; 
+                    //Reset time out
+                    iter_time_out=0;
                     printf("CORRECT BUTTON!\n");
                     if(iter==n) {
                         printf("SEQUENCE COMPLETED!!\n");
                         iter=0;
+                        iter_time_out=0;
                         stateManager.changeState(SHOW_STATE);
-                        break;
+                        for(int i=0; i<4; i++)
+                            pre_status[i] = false;
+                        continue;
                     }
                 }
             }
@@ -122,22 +135,37 @@ void *introduce_thread(void *param) {
             else {
                 if(rising_edges[i]==true) {
                     printf("WRONG BUTTON!!\n");
+                    iter_time_out=0;
                     iter=0;
                     stateManager.changeState(INIT_STATE);
                     current_sequence.clear();
-                    break;
+                    for(int i=0; i<4; i++)
+                            pre_status[i] = false;
+                    continue;
                 }
             }
-
         }
 
         //printf("LED NUMBER: %d",(int)current_sequence[iter]);
         if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
             printf("INIT BUTTON PRESSED!!!\n");
+            iter_time_out=0;
             stateManager.changeState(INIT_STATE);
+            for(int i=0; i<4; i++)
+                            pre_status[i] = false;
+            continue;
         }
 
-        pre_status = status;
+        //Time out
+        iter_time_out++;
+        if(iter_time_out > time_out) {
+            iter_time_out=0;
+            std::cout << "TIME FINISHED :( " << std::endl;
+            stateManager.changeState(INIT_STATE);
+            for(int i=0; i<4; i++)
+                pre_status[i] = false;
+            continue;
+        }
 
         usleep(10000);
     }
@@ -176,6 +204,14 @@ void *fail_game(int stFrom, int stTo) {
         simon_led_strip.in_game();
 }
 
+void *starting_game(int stFrom, int stTo) {
+    //Turn all leds to say that game starts
+    simon_leds_out.turn_all_on();
+    sleep(1);
+    simon_leds_out.turn_all_on();
+    std::cout << "INTRODUCE THE SEQUENCE!!" << std::endl;
+}
+
 
 int main() {
 
@@ -187,7 +223,7 @@ int main() {
     pthread_attr_init(&attr);
 
     stateManager.addStateChangeListener(0,1,changeStateHandler);
-    stateManager.addStateChangeListener(1,2,changeStateHandler);
+    stateManager.addStateChangeListener(1,2,starting_game);
     stateManager.addStateChangeListener(2,1,success_game);
     stateManager.addStateChangeListener(1,0,changeStateHandler);
     stateManager.addStateChangeListener(2,0,fail_game);
