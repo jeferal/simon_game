@@ -5,6 +5,7 @@
 
 #include "simon/simon_leds.hpp"
 #include "simon/simon_buttons.hpp"
+#include "simon/simon_led_strip.hpp"
 
 #include "state_monitor/state_monitor.hpp"
 #include "state_monitor/thread_conf.hpp"
@@ -18,13 +19,17 @@
 StateMonitor stateManager;
 SimonLeds simon_leds_out;
 SimonButtons simon_buttons_in;
+SimonLedStrip simon_led_strip("192.168.1.117",80);
+int vel_show = 1000000;
+bool use_leds;
+
 int n=1;
 std::vector<SimonLeds::COLOR> current_sequence(MAX_SEQUENCE);
 
 void *init_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
     long longPassed = (long) cfgPassed->getArg();
-    int iter = 0;
+    int iter=0;
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
         printf("INIT STATE\n");
@@ -40,7 +45,7 @@ void *init_thread(void *param) {
 void *show_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
     long longPassed = (long) cfgPassed->getArg();
-    int iter = 0;
+    int iter=0;
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
         SimonLeds::COLOR current_color;
@@ -56,23 +61,21 @@ void *show_thread(void *param) {
             current_sequence[iter] = current_color;
         }
         //Time on
-        usleep(1000000);
+        usleep(vel_show);
 
         simon_leds_out.turn_off(current_color);
         //Time off
-        usleep(1000000);
+        usleep(vel_show);
         iter++;
 
         if(iter==n) {
             printf("SECUENCIA TERMINADA\n");
             stateManager.changeState(INTRODUCE_STATE);
             iter=0;
-            n++;
         }
 
         if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
             printf("INIT BUTTON PRESSED!!!\n");
-            n=1;
             current_sequence.clear();
             stateManager.changeState(INIT_STATE);
         } 
@@ -91,7 +94,7 @@ void *introduce_thread(void *param) {
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
         //Read all buttons
-        std::vector<bool> status = simon_buttons_in.read_status(true);
+        std::vector<bool> status = simon_buttons_in.read_status(false);
         simon_leds_out.show_array(status);
         std::vector<bool> rising_edges(4);
 
@@ -99,19 +102,36 @@ void *introduce_thread(void *param) {
             rising_edges[i] = status[i]==true && pre_status[i]==false;
         }
 
+        int current_led = (int)current_sequence[iter];
+
+        for(int i=0; i<4; i++) {
+            if(i==current_led) {
+                if(rising_edges[current_led]==true) {
+                    iter++;
+                    std::cout << "Iter: " << iter << ", n-1: " << n-1 << std::endl; 
+                    printf("CORRECT BUTTON!\n");
+                    if(iter==n) {
+                        printf("SEQUENCE COMPLETED!!\n");
+                        iter=0;
+                        stateManager.changeState(SHOW_STATE);
+                        break;
+                    }
+                }
+            }
+
+            else {
+                if(rising_edges[i]==true) {
+                    printf("WRONG BUTTON!!\n");
+                    iter=0;
+                    stateManager.changeState(INIT_STATE);
+                    current_sequence.clear();
+                    break;
+                }
+            }
+
+        }
+
         //printf("LED NUMBER: %d",(int)current_sequence[iter]);
-
-        if(rising_edges[(int)current_sequence[iter]]==true) {
-            iter++;
-            printf("CORRECT BUTTON!\n");
-        }
-
-        if(iter == n-1) {
-            printf("SEQUENCE COMPLETED!!\n");
-            iter=0;
-            stateManager.changeState(SHOW_STATE);
-        }
-
         if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
             printf("INIT BUTTON PRESSED!!!\n");
             stateManager.changeState(INIT_STATE);
@@ -136,6 +156,26 @@ void *changeStateHandler(int stFrom, int stTo) {
     return(NULL);
 }
 
+void *success_game(int stFrom, int stTo) {
+    n++;
+    simon_leds_out.turn_all_off();
+    if(use_leds)
+        simon_led_strip.success_game();
+    sleep(3);
+    if(use_leds)
+        simon_led_strip.in_game();
+}
+
+void *fail_game(int stFrom, int stTo) {
+    n=1;
+    simon_leds_out.turn_all_off();
+    if(use_leds)
+        simon_led_strip.fail_game();
+    sleep(3);
+    if(use_leds)
+        simon_led_strip.in_game();
+}
+
 
 int main() {
 
@@ -148,9 +188,9 @@ int main() {
 
     stateManager.addStateChangeListener(0,1,changeStateHandler);
     stateManager.addStateChangeListener(1,2,changeStateHandler);
-    stateManager.addStateChangeListener(2,1,changeStateHandler);
+    stateManager.addStateChangeListener(2,1,success_game);
     stateManager.addStateChangeListener(1,0,changeStateHandler);
-    stateManager.addStateChangeListener(2,0,changeStateHandler);
+    stateManager.addStateChangeListener(2,0,fail_game);
 
     ThreadConf h01Cfg;
     h01Cfg.addState(0);
@@ -170,6 +210,8 @@ int main() {
 
     int myState = 0;
     stateManager.changeState(INIT_STATE);
+    if(use_leds)
+        simon_led_strip.in_game();
 
     while(true);    
 
