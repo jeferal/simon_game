@@ -1,7 +1,7 @@
 #ifndef SIMON_SEQUENCE_HPP_
 #define SIMON_SEQUENCE_HPP_
 
-#include "simon_leds.hpp"
+#include "simon_interfaces/simon_leds.hpp"
 
 #include <vector>
 

@@ -1,7 +1,7 @@
 #ifndef SIMON_BUTTONS_HPP_
 #define SIMON_BUTTONS_HPP_
 
-#include "../gpio_bbb/GPIO.hpp"
+#include "../../gpio_bbb/GPIO.hpp"
 #include <vector>
 
 using namespace BBB;

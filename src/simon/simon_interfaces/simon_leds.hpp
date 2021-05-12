@@ -1,7 +1,7 @@
 #ifndef SIMON_LEDS_HPP_
 #define SIMON_LEDS_HPP_
 
-#include "../gpio_bbb/GPIO.hpp"
+#include "../../gpio_bbb/GPIO.hpp"
 
 #include <vector>
 

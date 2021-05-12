@@ -3,9 +3,10 @@
 #include <vector>
 #include <pthread.h>
 
-#include "simon/simon_leds.hpp"
-#include "simon/simon_buttons.hpp"
+#include "simon/simon_interfaces/simon_leds.hpp"
+#include "simon/simon_interfaces/simon_buttons.hpp"
 #include "simon/simon_led_strip.hpp"
+#include "simon/simon_interfaces/simon_dial.hpp"
 
 #include "state_monitor/state_monitor.hpp"
 #include "state_monitor/thread_conf.hpp"
@@ -167,7 +168,7 @@ void *introduce_thread(void *param) {
             continue;
         }
 
-        usleep(10000);
+        usleep(100000);
     }
 }
 //void *pause_thread();
@@ -212,6 +213,18 @@ void *starting_game(int stFrom, int stTo) {
     std::cout << "INTRODUCE THE SEQUENCE!!" << std::endl;
 }
 
+void *dial_velocity(void *param) {
+    ThreadConf *cfgPassed = (ThreadConf*)param;
+    long longPassed = (long) cfgPassed->getArg();
+    SimonDial simon_dial_difficulty(0,BBB::PWM::P9_22);
+    for(;;) {
+        int state = stateManager.waitState(cfgPassed);
+        int value = simon_dial_difficulty.get_value();
+        simon_dial_difficulty.set_pot_position();
+        usleep(1000);
+    } 
+}
+
 
 int main() {
 
@@ -240,9 +253,14 @@ int main() {
     h11Cfg.addState(2);
     h11Cfg.setArg((void*)100);
 
+    ThreadConf h12Cfg;
+    h12Cfg.addState(0);
+    h12Cfg.setArg((void*)100);
+
     pthread_create(&th01,&attr,init_thread,(void*)&h01Cfg);
     pthread_create(&th02,&attr,show_thread,(void*)&h02Cfg);
     pthread_create(&th03,&attr,introduce_thread,(void*)&h11Cfg);
+    pthread_create(&th04,&attr,dial_velocity,(void*)&h12Cfg);
 
     int myState = 0;
     stateManager.changeState(INIT_STATE);
