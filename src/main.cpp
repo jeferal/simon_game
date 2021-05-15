@@ -7,6 +7,7 @@
 #include "simon/simon_interfaces/simon_buttons.hpp"
 #include "simon/simon_led_strip.hpp"
 #include "simon/simon_interfaces/simon_dial.hpp"
+#include "simon/simon_sequence.hpp"
 
 #include "state_monitor/state_monitor.hpp"
 #include "state_monitor/thread_conf.hpp"
@@ -22,12 +23,12 @@ SimonLeds simon_leds_out;
 SimonButtons simon_buttons_in;
 SimonLedStrip simon_led_strip("192.168.1.117",80);
 SimonDial simon_dial_difficulty;
-int vel_show = 1000000;
-int time_out = 200;
-bool use_leds=false;
+SimonSequence simon_sequence;
 
-int n=1;
-std::vector<SimonLeds::COLOR> current_sequence(MAX_SEQUENCE);
+
+int vel_show = 1000000;
+int time_out = 100;
+bool use_leds=false;
 
 void *init_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
@@ -48,42 +49,43 @@ void *init_thread(void *param) {
 void *show_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
     long longPassed = (long) cfgPassed->getArg();
-    int iter=0;
+
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
         SimonLeds::COLOR current_color;
-        if(iter < n-1) {
+
+        if(simon_sequence.get_num_steps() < simon_sequence.get_length()-1) {
             //Show the vector
             printf("Showing previous led");
-            current_color = current_sequence[iter];
+            current_color = simon_sequence.step();
             simon_leds_out.turn_on(current_color);
         } else {
             //Show random and store it
             printf("Showing random led\n");
             current_color = simon_leds_out.turn_on_random();
-            current_sequence[iter] = current_color;
+            simon_sequence.new_step(current_color);
         }
+
         vel_show = 1172.16*simon_dial_difficulty.get_value() + 1000000/5;
+
         //Time on
         usleep(vel_show);
 
         simon_leds_out.turn_off(current_color);
+
         //Time off
         usleep(vel_show);
-        iter++;
 
-        if(iter==n) {
+        if(simon_sequence.is_finished()) {
             printf("SECUENCIA TERMINADA\n");
             stateManager.changeState(INTRODUCE_STATE);
-            iter=0;
             continue;
         }
 
         if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
             printf("INIT BUTTON PRESSED!!!\n");
-            current_sequence.clear();
+            simon_sequence.reset();
             stateManager.changeState(INIT_STATE);
-            iter=0;
             continue;
         } 
     }
@@ -92,15 +94,18 @@ void *show_thread(void *param) {
 void *introduce_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
     long longPassed = (long) cfgPassed->getArg();
-    int iter=0;
+
     int iter_time_out=0;
+
     std::vector<bool> pre_status(4);
     pre_status[0] = false;
     pre_status[1] = false;
     pre_status[2] = false;
     pre_status[3] = false;
+
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
+
         //Read all buttons
         std::vector<bool> status = simon_buttons_in.read_status(false);
         simon_leds_out.show_array(status);
@@ -112,22 +117,23 @@ void *introduce_thread(void *param) {
 
         pre_status = status;
         
-        int current_led = (int)current_sequence[iter];
-        std::cout << "CURRENT LED: " << current_led << "and iter: " << iter << "and led[0]: " << current_sequence[0]<< std::endl;
+        int current_led = simon_sequence.get_current_led();
+        std::cout << "CURRENT LED: " << current_led << "and position: " << simon_sequence.get_num_steps() << std::endl;
 
         for(int i=0; i<4; i++) {
             if(i==current_led) {
                 if(rising_edges[current_led]==true) {
-                    iter++;
-                    std::cout << "Iter: " << iter << ", n-1: " << n-1 << std::endl; 
+                    simon_sequence.step();
+                    std::cout << "Position: " << simon_sequence.get_num_steps() << ", n-1: " << simon_sequence.get_length()-1 << std::endl; 
                     //Reset time out
                     iter_time_out=0;
                     printf("CORRECT BUTTON!\n");
-                    if(iter==n) {
+                    if(simon_sequence.is_finished()) {
                         printf("SEQUENCE COMPLETED!!\n");
-                        iter=0;
                         iter_time_out=0;
                         stateManager.changeState(SHOW_STATE);
+                        simon_sequence.new_color();
+
                         for(int i=0; i<4; i++)
                             pre_status[i] = false;
                         continue;
@@ -139,9 +145,9 @@ void *introduce_thread(void *param) {
                 if(rising_edges[i]==true) {
                     printf("WRONG BUTTON!!\n");
                     iter_time_out=0;
-                    iter=0;
+                    simon_sequence.reset();
                     stateManager.changeState(INIT_STATE);
-                    current_sequence.clear();
+
                     for(int i=0; i<4; i++)
                             pre_status[i] = false;
                     continue;
@@ -149,21 +155,22 @@ void *introduce_thread(void *param) {
             }
         }
 
-        //printf("LED NUMBER: %d",(int)current_sequence[iter]);
         if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
             printf("INIT BUTTON PRESSED!!!\n");
             iter_time_out=0;
+            simon_sequence.reset();
             stateManager.changeState(INIT_STATE);
             for(int i=0; i<4; i++)
-                            pre_status[i] = false;
+                pre_status[i] = false;
             continue;
         }
 
-        //Time out
         iter_time_out++;
+        std::cout << iter_time_out << std::endl;
         if(iter_time_out > time_out) {
             iter_time_out=0;
             std::cout << "TIME FINISHED :( " << std::endl;
+            simon_sequence.reset();
             stateManager.changeState(INIT_STATE);
             for(int i=0; i<4; i++)
                 pre_status[i] = false;
@@ -173,22 +180,20 @@ void *introduce_thread(void *param) {
         usleep(100000);
     }
 }
-//void *pause_thread();
+
 
 void *changeStateHandler(int stFrom, int stTo) {
     printf("********************** Cambio de estado: desde %d a %d.\n",stFrom,stTo);
-    printf("N=%d", n);
-    printf("Leds in the sequence: ");
+    printf("Length: N=%d", simon_sequence.get_length());
+
     simon_leds_out.turn_all_off();
-    for(int i=0; i<n; i++) {
-        std::cout << ", " << current_sequence[i] << std::endl;
-    }
+    simon_sequence.show();
+
     usleep(2000000);
     return(NULL);
 }
 
 void *success_game(int stFrom, int stTo) {
-    n++;
     simon_leds_out.turn_all_off();
     if(use_leds)
         simon_led_strip.success_game();
@@ -198,7 +203,7 @@ void *success_game(int stFrom, int stTo) {
 }
 
 void *fail_game(int stFrom, int stTo) {
-    n=1;
+
     simon_leds_out.turn_all_off();
     if(use_leds)
         simon_led_strip.fail_game();
@@ -222,6 +227,7 @@ void *dial_velocity(void *param) {
     for(;;) {
         int state = stateManager.waitState(cfgPassed);
         int value = simon_dial_difficulty.get_value();
+        std::cout << "Dificulty value: " << value << std::endl;
         simon_dial_difficulty.set_pot_position();
         usleep(1000);
     } 
