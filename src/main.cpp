@@ -34,14 +34,22 @@ void *init_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
     long longPassed = (long) cfgPassed->getArg();
     int iter=0;
+
+    bool pre_status = false;
+
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
         printf("INIT STATE\n");
 
-        if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
+        bool button_status = simon_buttons_in.read_button(SimonButtons::COLOR::INIT);
+
+        if(button_status == true && pre_status == false) {
             printf("INIT BUTTON PRESSED!!!\n");
+            pre_status = false;
             stateManager.changeState(SHOW_STATE);
         }
+
+        pre_status = button_status;
         usleep(600000);
     }
 }
