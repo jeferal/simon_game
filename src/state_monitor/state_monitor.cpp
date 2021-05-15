@@ -2,6 +2,7 @@
 
 StateMonitor::StateMonitor() {
     internalState = 0;
+    previousInternalState = internalState;
     int i,j,k;
     //////////////////////////////////////////////////////////////////////////
     //// EJERCICIO 2: inicializar tanto el mutex "mutex" como la variable  
@@ -42,6 +43,8 @@ int StateMonitor::changeState(int st) {
                 (*func_table[internalState][st][i])(internalState,st);
             }
         }
+    //Store the previous state
+    previousInternalState = internalState;
     internalState = st;
     pthread_cond_broadcast(&condition);
     pthread_mutex_unlock(&mutex); 
@@ -53,6 +56,16 @@ int StateMonitor::getState() {
     
     pthread_mutex_lock(&mutex); 
     aux = internalState;
+    pthread_mutex_unlock(&mutex); 
+    
+    return(aux);
+}
+
+int StateMonitor::getPreviousState() {
+    int aux;
+    
+    pthread_mutex_lock(&mutex); 
+    aux = previousInternalState;
     pthread_mutex_unlock(&mutex); 
     
     return(aux);

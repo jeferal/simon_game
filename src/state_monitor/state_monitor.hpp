@@ -15,6 +15,7 @@ class StateMonitor {
         static const int MAXSTATES = MAXSTATES_DEF;
         static const int MAXLISTENERS = MAXLISTENERS_DEF;
         int internalState;
+        int previousInternalState;
         pthread_mutex_t mutex;
         pthread_cond_t condition;
         void* (*func_table[MAXSTATES][MAXSTATES][MAXLISTENERS])(int stFrom, int stTo);
@@ -27,6 +28,7 @@ class StateMonitor {
         int changeState(int st);
 
         int getState();
+        int getPreviousState();
         int addStateChangeListener(int fromState, int toState, void* (*handle)(int,int));
 
 };
