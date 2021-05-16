@@ -5,8 +5,10 @@
 
 #include "simon/simon_interfaces/simon_leds.hpp"
 #include "simon/simon_interfaces/simon_buttons.hpp"
-#include "simon/simon_led_strip.hpp"
 #include "simon/simon_interfaces/simon_dial.hpp"
+#include "simon/simon_interfaces/simon_matrix.hpp"
+
+#include "simon/simon_led_strip.hpp"
 #include "simon/simon_sequence.hpp"
 
 #include "state_monitor/state_monitor.hpp"
@@ -26,7 +28,7 @@ SimonButtons simon_buttons_in;
 SimonLedStrip simon_led_strip("192.168.1.117",80);
 SimonDial simon_dial_difficulty;
 SimonSequence simon_sequence;
-
+SimonMatrix simon_matrix(2,112);
 
 int vel_show = 1000000;
 int time_out = 100;
@@ -148,11 +150,11 @@ void *introduce_thread(void *param) {
                 if(rising_edges[current_led]==true) {
                     simon_sequence.step();
                     std::cout << "Position: " << simon_sequence.get_num_steps() << ", n-1: " << simon_sequence.get_length()-1 << std::endl; 
-                    //Reset time out
-                    iter_time_out=0;
+                    //iter_time_out=0;
                     printf("CORRECT BUTTON!\n");
                     if(simon_sequence.is_finished()) {
                         printf("SEQUENCE COMPLETED!!\n");
+                        //Reset time out
                         iter_time_out=0;
                         stateManager.changeState(SHOW_STATE);
                         simon_sequence.new_color();
@@ -246,6 +248,19 @@ void *pause_thread(void *param) {
     }
 }
 
+void *score_thread(void *param) {
+    ThreadConf *cfgPassed = (ThreadConf*)param;
+    long longPassed = (long) cfgPassed->getArg();
+
+    for (;;) {
+        int state = stateManager.waitState(cfgPassed);
+        std::cout << "division time: "<< (iter_time_out*8)/time_out << std::endl;
+        simon_matrix.display_score_time(simon_sequence.get_length(), (int) (iter_time_out*8)/time_out);
+
+        usleep(100000);
+    }
+}
+
 void *changeStateHandler(int stFrom, int stTo) {
     printf("********************** Cambio de estado: desde %d a %d.\n",stFrom,stTo);
     printf("Length: N=%d", simon_sequence.get_length());
@@ -302,7 +317,7 @@ int main() {
 
     std::cout << "Starting program" << std::endl;
 
-    pthread_t th01, th02, th03, th04, th05;
+    pthread_t th01, th02, th03, th04, th05, th06;
     pthread_attr_t attr;
 
     pthread_attr_init(&attr);
@@ -337,11 +352,17 @@ int main() {
     h13Cfg.addState(PAUSE_STATE);
     h13Cfg.setArg((void*)100);
 
+    ThreadConf h14Cfg;
+    h14Cfg.addState(INIT_STATE); h14Cfg.addState(INTRODUCE_STATE); h14Cfg.addState(SHOW_STATE);
+    h14Cfg.addState(PAUSE_STATE);
+    h14Cfg.setArg((void*)100);
+
     pthread_create(&th01,&attr,init_thread,(void*)&h01Cfg);
     pthread_create(&th02,&attr,show_thread,(void*)&h02Cfg);
     pthread_create(&th03,&attr,introduce_thread,(void*)&h11Cfg);
     pthread_create(&th04,&attr,dial_velocity,(void*)&h12Cfg);
     pthread_create(&th05,&attr,pause_thread,(void*)&h13Cfg);
+    pthread_create(&th06,&attr,score_thread,(void*)&h14Cfg);
 
     int myState = 0;
     stateManager.changeState(INIT_STATE);

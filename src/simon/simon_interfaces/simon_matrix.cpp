@@ -116,7 +116,7 @@ int SimonMatrix::display_score(int n1, int n2) {
     return _display_img(number_data);
 }
 
-int SimonMatrix::display_score_time(int n1, int n2, int time) {
+int SimonMatrix::display_numbers_time(int n1, int n2, int time) {
 
     unsigned short int number_data[8];
     
@@ -130,4 +130,9 @@ int SimonMatrix::display_score_time(int n1, int n2, int time) {
     number_data[7] = 0xff << time;
 
     return _display_img(number_data);
+}
+
+int SimonMatrix::display_score_time(int n, int time) {
+
+    return display_numbers_time((int)n/10,n%10,time);
 }

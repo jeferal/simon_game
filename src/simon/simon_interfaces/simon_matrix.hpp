@@ -31,7 +31,8 @@ class SimonMatrix {
 
         int display_number(int n);
         int display_score(int n1, int n2);
-        int display_score_time(int n1, int n2, int time);
+        int display_numbers_time(int n1, int n2, int time);
+        int display_score_time(int n, int time);
 };
 
 #endif /* SIMON_MATRIX_HPP_ */
