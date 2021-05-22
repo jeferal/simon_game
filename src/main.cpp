@@ -7,6 +7,7 @@
 #include "simon/simon_interfaces/simon_buttons.hpp"
 #include "simon/simon_interfaces/simon_dial.hpp"
 #include "simon/simon_interfaces/simon_matrix.hpp"
+#include "simon/simon_interfaces/simon_buzzer.hpp"
 
 #include "simon/simon_led_strip.hpp"
 #include "simon/simon_sequence.hpp"
@@ -30,6 +31,7 @@ SimonDial simon_dial_difficulty(0,BBB::PWM::P9_22);
 SimonDial simon_dial_velocity(1,BBB::PWM::P9_21);
 SimonSequence simon_sequence;
 SimonMatrix simon_matrix(2,112);
+SimonBuzzer simon_buzzer(BBB::PWM::P8_19);
 
 int vel_show = 1000000;
 int time_out = 50;
@@ -81,8 +83,6 @@ void *show_thread(void *param) {
             current_color = simon_leds_out.turn_on_random();
             simon_sequence.new_step(current_color);
         }
-
-        vel_show = 1172.16*simon_dial_difficulty.get_value() + 1000000/5;
 
         //Time on
         usleep(vel_show);
@@ -290,6 +290,8 @@ void *fail_game(int stFrom, int stTo) {
     sleep(3);
     if(use_leds)
         simon_led_strip.in_game();
+
+    simon_buzzer.show_fail(1000000);
 }
 
 void *starting_game(int stFrom, int stTo) {
@@ -297,6 +299,7 @@ void *starting_game(int stFrom, int stTo) {
     simon_leds_out.turn_all_on();
     sleep(1);
     simon_leds_out.turn_all_on();
+    simon_buzzer.show_success(1000000);
     std::cout << "INTRODUCE THE SEQUENCE!!" << std::endl;
 }
 
@@ -308,6 +311,7 @@ void *dial_velocity(void *param) {
         int state = stateManager.waitState(cfgPassed);
         int value = simon_dial_difficulty.get_value();
         //std::cout << "Dificulty value: " << value << std::endl;
+        vel_show = 1172.16*value + 1000000/5;
         simon_dial_difficulty.set_pot_position();
         usleep(1000);
     } 
@@ -321,6 +325,7 @@ void *dial_difficulty(void *param) {
         int state = stateManager.waitState(cfgPassed);
         int value = simon_dial_velocity.get_value();
         //std::cout << "Velocity value: " << value << std::endl;
+        time_out = 0.0225*value + 10;
         simon_dial_velocity.set_pot_position();
         usleep(1000);
     } 
