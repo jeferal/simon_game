@@ -10,7 +10,7 @@ SimonDial::SimonDial() {
     m = (sval_max-sval_min)/v_pot_max;
 }
 
-SimonDial::SimonDial(int analog_id, BBB::PWM pwm_id) {
+SimonDial::SimonDial(int analog_id, BBB::PWM::pinPWM pwm_id) {
     this->analog_id = analog_id;
 
     pwm_servo = new BBB::PWM(pwm_id);
@@ -18,6 +18,10 @@ SimonDial::SimonDial(int analog_id, BBB::PWM pwm_id) {
     pwm_servo->run();
 
     m = (sval_max-sval_min)/v_pot_max;
+}
+
+SimonDial::~SimonDial() {
+    pwm_servo->stop();
 }
 
 int SimonDial::get_value() {

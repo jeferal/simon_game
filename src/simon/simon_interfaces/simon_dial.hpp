@@ -8,7 +8,8 @@
 class SimonDial {
     public:
         SimonDial();
-        SimonDial(int analog_id, BBB::PWM pwm_id);
+        SimonDial(int analog_id, BBB::PWM::pinPWM pwm_id);
+        ~SimonDial();
 
         int get_value();
         void set_position(unsigned duty);
