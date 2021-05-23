@@ -36,7 +36,7 @@ SimonBuzzer simon_buzzer(BBB::PWM::P8_19);
 int vel_show = 1000000;
 int time_out = 50;
 int iter_time_out = 0;
-bool use_leds=false;
+bool use_leds=true;
 
 void *init_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
@@ -58,7 +58,7 @@ void *init_thread(void *param) {
         }
 
         pre_status = button_status;
-        usleep(600000);
+        usleep(100000);
     }
 }
 
@@ -133,7 +133,7 @@ void *introduce_thread(void *param) {
         int state = stateManager.waitState(cfgPassed);
 
         //Read all buttons
-        std::vector<bool> status = simon_buttons_in.read_status(false);
+        std::vector<bool> status = simon_buttons_in.read_status(true);
         simon_leds_out.show_array(status);
         std::vector<bool> rising_edges(4);
 
@@ -274,32 +274,33 @@ void *changeStateHandler(int stFrom, int stTo) {
 }
 
 void *success_game(int stFrom, int stTo) {
+    simon_buzzer.show_start(PERIOD_SUCCESS);
     simon_leds_out.turn_all_off();
     if(use_leds)
         simon_led_strip.success_game();
     sleep(3);
     if(use_leds)
         simon_led_strip.in_game();
+    simon_buzzer.show_stop();
 }
 
 void *fail_game(int stFrom, int stTo) {
-
+    simon_buzzer.show_start(PERIOD_FAIL);
     simon_leds_out.turn_all_off();
     if(use_leds)
         simon_led_strip.fail_game();
     sleep(3);
     if(use_leds)
         simon_led_strip.in_game();
-
-    simon_buzzer.show_fail(1000000);
+    simon_buzzer.show_stop();
 }
 
 void *starting_game(int stFrom, int stTo) {
     //Turn all leds to say that game starts
-    simon_leds_out.turn_all_on();
-    sleep(1);
-    simon_leds_out.turn_all_on();
-    simon_buzzer.show_success(1000000);
+    //simon_leds_out.turn_all_on();
+    //sleep(1);
+    //simon_leds_out.turn_all_on();
+    simon_buzzer.show_starting_game(1000000);
     std::cout << "INTRODUCE THE SEQUENCE!!" << std::endl;
 }
 
