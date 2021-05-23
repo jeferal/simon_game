@@ -9,8 +9,6 @@ using namespace BBB;
 //Preguntar duda
 //Cómo pasar esta función si estuviera dentro de la clase
 //Cómo darle argumentos
-int init_event_handler(int arg);
-int pause_event_handler(int arg);
 
 class SimonButtons {
     public:
@@ -25,6 +23,10 @@ class SimonButtons {
         SimonButtons();
         bool read_button(COLOR color);
         std::vector<bool> read_status(bool=false);
+        bool get_set_interruption(bool &status);
+
+        void set_init_interruption(BBB::CallbackType function);
+        void set_pause_interruption(BBB::CallbackType function);
 
 };
 

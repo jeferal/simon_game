@@ -39,6 +39,20 @@ int time_out = 50;
 int iter_time_out = 0;
 bool use_leds=false;
 bool pause_pre_st = false;
+bool rising_edge_init = false;
+bool rising_edge_pause = false;
+
+int init_event_handler(int arg) {
+    printf("INIT BUTTON PRESSED!!!\n");
+    rising_edge_init = true;
+    return 0;
+}
+
+int pause_event_handler(int arg) {
+    printf("PAUSE BUTTON PRESSED!!!\n");
+    rising_edge_pause = true;
+    return 0;
+}
 
 void *init_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
@@ -109,7 +123,7 @@ void *show_thread(void *param) {
 
         //Read pause button
         bool pause_status = simon_buttons_in.read_button(SimonButtons::COLOR::PAUSE);
-        if(pause_status == true && pause_pre == false) {
+        if(simon_buttons_in.get_set_interruption(rising_edge_pause)) {
             stateManager.changeState(PAUSE_STATE);
             pause_pre = false;
             continue;
@@ -198,7 +212,7 @@ void *introduce_thread(void *param) {
 
         //Read pause button
         bool pause_status = simon_buttons_in.read_button(SimonButtons::COLOR::PAUSE);
-        if(pause_status == true && pause_pre_st == false) {
+        if(simon_buttons_in.get_set_interruption(rising_edge_pause)) {
             stateManager.changeState(PAUSE_STATE);
             pause_pre_st = false;
             continue;
@@ -220,7 +234,7 @@ void *pause_thread(void *param) {
 
         //Read pause button
         bool pause_status = simon_buttons_in.read_button(SimonButtons::COLOR::PAUSE);
-        if(pause_status == true && pause_pre_st == false) {
+        if(simon_buttons_in.get_set_interruption(rising_edge_pause)) {
             pause_pre_st = pause_status;
             //Go to the previous state
             std::cout << "Previous State: " << stateManager.getPreviousState() << std::endl;
@@ -228,7 +242,7 @@ void *pause_thread(void *param) {
             continue;
         }
 
-        //Check also pause button
+        //Check also init button
         bool init_status = simon_buttons_in.read_button(SimonButtons::COLOR::INIT);
         if(init_status == true && init_pre == false) {
             init_pre = false;
@@ -397,6 +411,10 @@ int main(int argc, char *argv[]) {
     pthread_create(&th07,&attr,dial_difficulty_thread,(void*)&h16Cfg);
 
     int myState = 0;
+
+    simon_buttons_in.set_init_interruption(init_event_handler);
+    simon_buttons_in.set_pause_interruption(pause_event_handler);
+
     stateManager.changeState(INIT_STATE);
     if(use_leds)
         simon_led_strip.in_game();

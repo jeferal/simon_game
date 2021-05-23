@@ -19,16 +19,20 @@ SimonButtons::SimonButtons() {
     inButton[3]->setDirection(GPIO::INPUT);
     inButton[4]->setDirection(GPIO::INPUT);
     inButton[5]->setDirection(GPIO::INPUT);
-    
+}
+
+void SimonButtons::set_init_interruption(BBB::CallbackType function) {
     inButton[4]->setActiveHigh();
     inButton[4]->setEdgeType(GPIO::RISING);
 	inButton[4]->setDebounceTime(200);
-	inButton[4]->waitForEdge(init_event_handler);
+	inButton[4]->waitForEdge(function);
+}
 
+void SimonButtons::set_pause_interruption(BBB::CallbackType function) {
     inButton[5]->setActiveHigh();
     inButton[5]->setEdgeType(GPIO::RISING);
 	inButton[5]->setDebounceTime(200);
-	inButton[5]->waitForEdge(pause_event_handler);
+	inButton[5]->waitForEdge(function);
 }
 
 bool SimonButtons::read_button(COLOR color) {
@@ -54,14 +58,10 @@ std::vector<bool> SimonButtons::read_status(bool show) {
     return buttons_status;
 }
 
-int init_event_handler(int arg) {
-    //printf("INIT BUTTON PRESSED!!!\n");
-    usleep(1000000);
-    return 0;
-}
-
-int pause_event_handler(int arg) {
-    printf("PAUSE BUTTON PRESSED!!!\n");
-    usleep(1000000);
-    return 0;
+bool SimonButtons::get_set_interruption(bool &status) {
+    bool value = status;
+    if (status)
+        status = false;
+        
+    return value;
 }
