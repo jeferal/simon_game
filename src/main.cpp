@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <vector>
 #include <pthread.h>
+#include <getopt.h>
 
 #include "simon/simon_interfaces/simon_leds.hpp"
 #include "simon/simon_interfaces/simon_buttons.hpp"
@@ -36,7 +37,8 @@ SimonBuzzer simon_buzzer(BBB::PWM::P8_19);
 int vel_show = 1000000;
 int time_out = 50;
 int iter_time_out = 0;
-bool use_leds=true;
+bool use_leds=false;
+bool pause_pre_st = false;
 
 void *init_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
@@ -155,13 +157,10 @@ void *introduce_thread(void *param) {
                     printf("CORRECT BUTTON!\n");
                     if(simon_sequence.is_finished()) {
                         printf("SEQUENCE COMPLETED!!\n");
-                        //Reset time out
-                        iter_time_out=0;
-                        stateManager.changeState(SHOW_STATE);
-                        simon_sequence.new_color();
-
                         for(int i=0; i<4; i++)
                             pre_status[i] = false;
+
+                        stateManager.changeState(SHOW_STATE);
                         continue;
                     }
                 }
@@ -170,8 +169,6 @@ void *introduce_thread(void *param) {
             else {
                 if(rising_edges[i]==true) {
                     printf("WRONG BUTTON!!\n");
-                    iter_time_out=0;
-                    simon_sequence.reset();
                     stateManager.changeState(INIT_STATE);
 
                     for(int i=0; i<4; i++)
@@ -183,8 +180,6 @@ void *introduce_thread(void *param) {
 
         if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
             printf("INIT BUTTON PRESSED!!!\n");
-            iter_time_out=0;
-            simon_sequence.reset();
             stateManager.changeState(INIT_STATE);
             for(int i=0; i<4; i++)
                 pre_status[i] = false;
@@ -194,9 +189,7 @@ void *introduce_thread(void *param) {
         iter_time_out++;
         std::cout << iter_time_out << std::endl;
         if(iter_time_out > time_out) {
-            iter_time_out=0;
             std::cout << "TIME FINISHED :( " << std::endl;
-            simon_sequence.reset();
             stateManager.changeState(INIT_STATE);
             for(int i=0; i<4; i++)
                 pre_status[i] = false;
@@ -205,12 +198,12 @@ void *introduce_thread(void *param) {
 
         //Read pause button
         bool pause_status = simon_buttons_in.read_button(SimonButtons::COLOR::PAUSE);
-        if(pause_status == true && pause_pre == false) {
+        if(pause_status == true && pause_pre_st == false) {
             stateManager.changeState(PAUSE_STATE);
-            pause_pre = false;
+            pause_pre_st = false;
             continue;
         }
-
+        pause_pre_st = pause_status;
         usleep(100000);
     }
 }
@@ -219,19 +212,20 @@ void *pause_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
     long longPassed = (long) cfgPassed->getArg();
 
-    bool pause_pre = false;
     bool init_pre = false;
 
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
+        std::cout << "PAUSE THREAD" << std::endl;
 
         //Read pause button
         bool pause_status = simon_buttons_in.read_button(SimonButtons::COLOR::PAUSE);
-        if(pause_status == true && pause_pre == false) {
-            pause_pre = false;
+        if(pause_status == true && pause_pre_st == false) {
+            pause_pre_st = pause_status;
             //Go to the previous state
             std::cout << "Previous State: " << stateManager.getPreviousState() << std::endl;
             stateManager.changeState(stateManager.getPreviousState());
+            continue;
         }
 
         //Check also pause button
@@ -243,9 +237,12 @@ void *pause_thread(void *param) {
             //Reset time out
             iter_time_out = 0;
             stateManager.changeState(INIT_STATE);
+            continue;
         }
 
         usleep(100000);
+
+        pause_pre_st = pause_status;
     }
 }
 
@@ -262,49 +259,7 @@ void *score_thread(void *param) {
     }
 }
 
-void *changeStateHandler(int stFrom, int stTo) {
-    printf("********************** Cambio de estado: desde %d a %d.\n",stFrom,stTo);
-    printf("Length: N=%d", simon_sequence.get_length());
-
-    simon_leds_out.turn_all_off();
-    simon_sequence.show();
-
-    usleep(2000000);
-    return(NULL);
-}
-
-void *success_game(int stFrom, int stTo) {
-    simon_buzzer.show_start(PERIOD_SUCCESS);
-    simon_leds_out.turn_all_off();
-    if(use_leds)
-        simon_led_strip.success_game();
-    sleep(3);
-    if(use_leds)
-        simon_led_strip.in_game();
-    simon_buzzer.show_stop();
-}
-
-void *fail_game(int stFrom, int stTo) {
-    simon_buzzer.show_start(PERIOD_FAIL);
-    simon_leds_out.turn_all_off();
-    if(use_leds)
-        simon_led_strip.fail_game();
-    sleep(3);
-    if(use_leds)
-        simon_led_strip.in_game();
-    simon_buzzer.show_stop();
-}
-
-void *starting_game(int stFrom, int stTo) {
-    //Turn all leds to say that game starts
-    //simon_leds_out.turn_all_on();
-    //sleep(1);
-    //simon_leds_out.turn_all_on();
-    simon_buzzer.show_starting_game(1000000);
-    std::cout << "INTRODUCE THE SEQUENCE!!" << std::endl;
-}
-
-void *dial_velocity(void *param) {
+void *dial_velocity_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
     long longPassed = (long) cfgPassed->getArg();
     
@@ -318,7 +273,7 @@ void *dial_velocity(void *param) {
     } 
 }
 
-void *dial_difficulty(void *param) {
+void *dial_difficulty_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
     long longPassed = (long) cfgPassed->getArg();
     
@@ -332,7 +287,63 @@ void *dial_difficulty(void *param) {
     } 
 }
 
-int main() {
+void *success_game(int stFrom, int stTo) {
+    //n++
+    simon_sequence.new_color();
+    //Reset time out
+    iter_time_out=0;
+
+    simon_buzzer.show_start(PERIOD_SUCCESS);
+    simon_leds_out.turn_all_off();
+
+    if(use_leds)
+        simon_led_strip.success_game();
+    sleep(3);
+    if(use_leds)
+        simon_led_strip.in_game();
+    simon_buzzer.show_stop();
+}
+
+void *fail_game(int stFrom, int stTo) {
+    //Reset time out
+    iter_time_out=0;
+    //Reset sequence
+    simon_sequence.reset();
+
+
+    simon_buzzer.show_start(PERIOD_FAIL);
+    simon_leds_out.turn_all_off();
+    if(use_leds)
+        simon_led_strip.fail_game();
+    sleep(3);
+    if(use_leds)
+        simon_led_strip.in_game();
+    simon_buzzer.show_stop();
+}
+
+void *starting_game(int stFrom, int stTo) {
+    //Turn all leds to say that game starts
+    simon_buzzer.show_starting_game(1000000);
+    std::cout << "INTRODUCE THE SEQUENCE!!" << std::endl;
+}
+
+void *pause_game(int stFrom, int stTo) {
+    sleep(1);
+    //Reset value pause
+    pause_pre_st=true;
+
+}
+
+void *init_game(int stFrom, int stTo) {
+    simon_leds_out.turn_all_on();
+    sleep(2);
+    simon_leds_out.turn_all_off();
+    sleep(1);
+}
+
+int main(int argc, char *argv[]) {
+
+    use_leds = false;
 
     std::cout << "Starting program" << std::endl;
 
@@ -341,15 +352,12 @@ int main() {
 
     pthread_attr_init(&attr);
 
-    stateManager.addStateChangeListener(INIT_STATE,SHOW_STATE,changeStateHandler);
     stateManager.addStateChangeListener(SHOW_STATE,INTRODUCE_STATE,starting_game);
     stateManager.addStateChangeListener(INTRODUCE_STATE,SHOW_STATE,success_game);
-    stateManager.addStateChangeListener(SHOW_STATE,INIT_STATE,changeStateHandler);
     stateManager.addStateChangeListener(INTRODUCE_STATE,INIT_STATE,fail_game);
-    stateManager.addStateChangeListener(SHOW_STATE,PAUSE_STATE,changeStateHandler);
-    stateManager.addStateChangeListener(PAUSE_STATE,SHOW_STATE,changeStateHandler);
-    stateManager.addStateChangeListener(INTRODUCE_STATE,PAUSE_STATE,changeStateHandler);
-    stateManager.addStateChangeListener(PAUSE_STATE,INTRODUCE_STATE,changeStateHandler);
+    stateManager.addStateChangeListener(INIT_STATE, SHOW_STATE, *init_game);
+    stateManager.addStateChangeListener(SHOW_STATE, PAUSE_STATE, *pause_game);
+    stateManager.addStateChangeListener(INTRODUCE_STATE, PAUSE_STATE, *pause_game);
 
     ThreadConf h01Cfg;
     h01Cfg.addState(INIT_STATE);
@@ -383,10 +391,10 @@ int main() {
     pthread_create(&th01,&attr,init_thread,(void*)&h01Cfg);
     pthread_create(&th02,&attr,show_thread,(void*)&h02Cfg);
     pthread_create(&th03,&attr,introduce_thread,(void*)&h11Cfg);
-    pthread_create(&th04,&attr,dial_velocity,(void*)&h12Cfg);
+    pthread_create(&th04,&attr,dial_velocity_thread,(void*)&h12Cfg);
     pthread_create(&th05,&attr,pause_thread,(void*)&h13Cfg);
     pthread_create(&th06,&attr,score_thread,(void*)&h14Cfg);
-    pthread_create(&th07,&attr,dial_difficulty,(void*)&h16Cfg);
+    pthread_create(&th07,&attr,dial_difficulty_thread,(void*)&h16Cfg);
 
     int myState = 0;
     stateManager.changeState(INIT_STATE);
