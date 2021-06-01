@@ -21,9 +21,6 @@
 #define INTRODUCE_STATE 2
 #define PAUSE_STATE 3
 
-#define MAX_SEQUENCE 100
-
-
 StateMonitor stateManager;
 SimonLeds simon_leds_out;
 SimonButtons simon_buttons_in;
@@ -365,11 +362,11 @@ void *init_game(int stFrom, int stTo) {
 
 int main(int argc, char *argv[]) {
 
-    use_leds = true;
+    use_leds = false;
 
     std::cout << "Starting program" << std::endl;
 
-    pthread_t th01, th02, th03, th04, th05, th06, th07;
+    pthread_t init_th, show_th, introduce_th, dial_velocity_th, pause_th, score_th, dial_difficulty_th;
     pthread_attr_t attr;
 
     pthread_attr_init(&attr);
@@ -381,57 +378,53 @@ int main(int argc, char *argv[]) {
     stateManager.addStateChangeListener(SHOW_STATE, PAUSE_STATE, *pause_game);
     stateManager.addStateChangeListener(INTRODUCE_STATE, PAUSE_STATE, *pause_game);
 
-    ThreadConf h01Cfg;
-    h01Cfg.addState(INIT_STATE);
-    h01Cfg.setArg((void*)200);
+    ThreadConf init_th_config;
+    init_th_config.addState(INIT_STATE);
+    init_th_config.setArg((void*)200);
 
-    ThreadConf h02Cfg;
-    h02Cfg.addState(SHOW_STATE);
-    h02Cfg.setArg((void*)250);
+    ThreadConf show_th_config;
+    show_th_config.addState(SHOW_STATE);
+    show_th_config.setArg((void*)250);
 
-    ThreadConf h11Cfg;
-    h11Cfg.addState(INTRODUCE_STATE);
-    h11Cfg.setArg((void*)100);
+    ThreadConf introduce_th_config;
+    introduce_th_config.addState(INTRODUCE_STATE);
+    introduce_th_config.setArg((void*)100);
 
-    ThreadConf h12Cfg;
-    h12Cfg.addState(INIT_STATE);
-    h12Cfg.setArg((void*)100);
+    ThreadConf dial_velocity_th_config;
+    dial_velocity_th_config.addState(INIT_STATE);
+    dial_velocity_th_config.setArg((void*)100);
 
-    ThreadConf h13Cfg;
-    h13Cfg.addState(PAUSE_STATE);
-    h13Cfg.setArg((void*)100);
+    ThreadConf pause_th_config;
+    pause_th_config.addState(PAUSE_STATE);
+    pause_th_config.setArg((void*)100);
 
-    ThreadConf h14Cfg;
-    h14Cfg.addState(INIT_STATE); h14Cfg.addState(INTRODUCE_STATE); h14Cfg.addState(SHOW_STATE);
-    h14Cfg.addState(PAUSE_STATE);
-    h14Cfg.setArg((void*)100);
+    ThreadConf score_th_config;
+    score_th_config.addState(INIT_STATE); score_th_config.addState(INTRODUCE_STATE); score_th_config.addState(SHOW_STATE);
+    score_th_config.addState(PAUSE_STATE);
+    score_th_config.setArg((void*)100);
 
-    ThreadConf h16Cfg;
-    h16Cfg.addState(INIT_STATE);
-    h16Cfg.setArg((void*)100);
+    ThreadConf dial_difficulty_th_config;
+    dial_difficulty_th_config.addState(INIT_STATE);
+    dial_difficulty_th_config.setArg((void*)100);
 
-    pthread_create(&th01,&attr,init_thread,(void*)&h01Cfg);
-    pthread_create(&th02,&attr,show_thread,(void*)&h02Cfg);
-    pthread_create(&th03,&attr,introduce_thread,(void*)&h11Cfg);
-    pthread_create(&th04,&attr,dial_velocity_thread,(void*)&h12Cfg);
-    pthread_create(&th05,&attr,pause_thread,(void*)&h13Cfg);
-    pthread_create(&th06,&attr,score_thread,(void*)&h14Cfg);
-    pthread_create(&th07,&attr,dial_difficulty_thread,(void*)&h16Cfg);
+    pthread_create(&init_th,&attr,init_thread,(void*)&init_th_config);
+    pthread_create(&show_th,&attr,show_thread,(void*)&show_th_config);
+    pthread_create(&introduce_th,&attr,introduce_thread,(void*)&introduce_th_config);
+    pthread_create(&dial_velocity_th,&attr,dial_velocity_thread,(void*)&dial_velocity_th_config);
+    pthread_create(&pause_th,&attr,pause_thread,(void*)&pause_th_config);
+    pthread_create(&score_th,&attr,score_thread,(void*)&score_th_config);
+    pthread_create(&dial_difficulty_th,&attr,dial_difficulty_thread,(void*)&dial_difficulty_th_config);
 
-    int myState = 0;
-
+    //Set interruptions
     simon_buttons_in.set_init_interruption(init_event_handler);
     simon_buttons_in.set_pause_interruption(pause_event_handler);
 
     stateManager.changeState(INIT_STATE);
+
     if(use_leds)
         simon_led_strip.in_game();
 
-    while(true);    
-
-    pthread_join(th01,NULL);
-    pthread_join(th02,NULL);
-    pthread_join(th03,NULL);
+    while(true);
 
     return 0;
 }
