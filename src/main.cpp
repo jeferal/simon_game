@@ -106,7 +106,7 @@ void *show_thread(void *param) {
         simon_leds_out.turn_off(current_color);
 
         //Time off
-        usleep(vel_show);
+        usleep(vel_show/4);
 
         if(simon_sequence.is_finished()) {
             printf("SECUENCIA TERMINADA\n");
@@ -273,7 +273,7 @@ void *dial_velocity_thread(void *param) {
         int state = stateManager.waitState(cfgPassed);
         int value = simon_dial_difficulty.get_value();
         
-        vel_show = 1172.16*value + 1000000/5;
+        vel_show = 500*value + 150000;
         std::cout << "Dificulty value (show velocity): " << vel_show << std::endl;
         simon_dial_difficulty.set_pot_position();
         usleep(100000);
@@ -288,7 +288,7 @@ void *dial_difficulty_thread(void *param) {
         int state = stateManager.waitState(cfgPassed);
         int value = simon_dial_velocity.get_value();
         
-        time_out = 0.0225*value + 10;
+        time_out = 0.008*value + 5;
         std::cout << "Time out value: " << value << std::endl;
         simon_dial_velocity.set_pot_position();
         usleep(100000);
@@ -296,19 +296,25 @@ void *dial_difficulty_thread(void *param) {
 }
 
 void *success_game(int stFrom, int stTo) {
-    //n++
-    simon_sequence.new_color();
     //Reset time out
     iter_time_out=0;
-
-    simon_buzzer.show_start(PERIOD_SUCCESS);
+    //n++
+    simon_sequence.new_color();
+    sleep(1);
     simon_leds_out.turn_all_off();
 
-    if(use_leds)
+    simon_buzzer.show_start(PERIOD_SUCCESS);
+
+    if(use_leds) {
         simon_led_strip.success_game();
-    sleep(3);
-    if(use_leds)
+        sleep(3);
+    } else {
+        sleep(2);
+    }
+    if(use_leds) {
         simon_led_strip.in_game();
+        printf("In game!!");
+    }
     simon_buzzer.show_stop();
 }
 
@@ -317,15 +323,19 @@ void *fail_game(int stFrom, int stTo) {
     iter_time_out=0;
     //Reset sequence
     simon_sequence.reset();
-
+    sleep(1);
+    simon_leds_out.turn_all_off();
 
     simon_buzzer.show_start(PERIOD_FAIL);
-    simon_leds_out.turn_all_off();
-    if(use_leds)
+    if(use_leds) {
         simon_led_strip.fail_game();
-    sleep(3);
+        sleep(3);
+    } else {
+        sleep(2);
+    }
     if(use_leds)
         simon_led_strip.in_game();
+
     simon_buzzer.show_stop();
 }
 
@@ -355,7 +365,7 @@ void *init_game(int stFrom, int stTo) {
 
 int main(int argc, char *argv[]) {
 
-    use_leds = false;
+    use_leds = true;
 
     std::cout << "Starting program" << std::endl;
 
