@@ -258,7 +258,6 @@ void *score_thread(void *param) {
 
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
-        //std::cout << "division time: "<< (iter_time_out*8)/time_out << std::endl;
         simon_matrix.display_score_time(simon_sequence.get_length(), (int) (iter_time_out*8)/time_out);
 
         usleep(100000);
@@ -274,7 +273,6 @@ void *dial_velocity_thread(void *param) {
         int value = simon_dial_difficulty.get_value();
         
         vel_show = 500*value + 150000;
-        std::cout << "Dificulty value (show velocity): " << vel_show << std::endl;
         simon_dial_difficulty.set_pot_position();
         usleep(100000);
     } 
@@ -289,7 +287,6 @@ void *dial_difficulty_thread(void *param) {
         int value = simon_dial_velocity.get_value();
         
         time_out = 0.008*value + 5;
-        std::cout << "Time out value: " << value << std::endl;
         simon_dial_velocity.set_pot_position();
         usleep(100000);
     } 
@@ -315,6 +312,7 @@ void *success_game(int stFrom, int stTo) {
         simon_led_strip.in_game();
         printf("In game!!");
     }
+
     simon_buzzer.show_stop();
 }
 
@@ -326,7 +324,7 @@ void *fail_game(int stFrom, int stTo) {
     sleep(1);
     simon_leds_out.turn_all_off();
 
-    simon_buzzer.show_start(PERIOD_FAIL);
+    simon_buzzer.show_fail();
     if(use_leds) {
         simon_led_strip.fail_game();
         sleep(3);
@@ -341,8 +339,10 @@ void *fail_game(int stFrom, int stTo) {
 
 void *starting_game(int stFrom, int stTo) {
     //Turn all leds to say that game starts
-    simon_buzzer.show_starting_game(1000000);
     std::cout << "INTRODUCE THE SEQUENCE!!" << std::endl;
+    simon_buzzer.show_starting_game();
+    sleep(2);
+    simon_buzzer.show_stop();
 }
 
 void *pause_game(int stFrom, int stTo) {

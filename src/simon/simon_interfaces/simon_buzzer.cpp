@@ -16,31 +16,24 @@ SimonBuzzer::~SimonBuzzer() {
     pwm_buzzer->stop();
 }
 
-void SimonBuzzer::show_fail(int time) {
+void SimonBuzzer::show_fail() {
     pwm_buzzer->setPeriod(PERIOD_FAIL);
     pwm_buzzer->setDutyCycle((unsigned int)PERIOD_FAIL/2);
-
     pwm_buzzer->run();
-    usleep(time);
-    pwm_buzzer->stop();
 }
 
-void SimonBuzzer::show_success(int time) {
+void SimonBuzzer::show_success() {
     pwm_buzzer->setPeriod(PERIOD_SUCCESS);
     pwm_buzzer->setDutyCycle((unsigned int)PERIOD_SUCCESS/2);
 
     pwm_buzzer->run();
-    usleep(time);
-    pwm_buzzer->stop();
 }
 
-void SimonBuzzer::show_starting_game(int time) {
+void SimonBuzzer::show_starting_game() {
     pwm_buzzer->setPeriod(PERIOD_STARTING_GAME);
     pwm_buzzer->setDutyCycle((unsigned int)PERIOD_STARTING_GAME/2);
 
     pwm_buzzer->run();
-    usleep(time);
-    pwm_buzzer->stop();
 }
 
 void SimonBuzzer::show_start(unsigned int period) {
