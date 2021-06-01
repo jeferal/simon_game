@@ -63,7 +63,7 @@ void *init_thread(void *param) {
 
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
-        printf("INIT STATE\n");
+        //printf("INIT STATE\n");
 
         bool button_status = simon_buttons_in.read_button(SimonButtons::COLOR::INIT);
 
@@ -114,7 +114,7 @@ void *show_thread(void *param) {
             continue;
         }
 
-        if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
+        if(simon_buttons_in.get_set_interruption(rising_edge_init)) {
             printf("INIT BUTTON PRESSED!!!\n");
             simon_sequence.reset();
             stateManager.changeState(INIT_STATE);
@@ -166,8 +166,9 @@ void *introduce_thread(void *param) {
             if(i==current_led) {
                 if(rising_edges[current_led]==true) {
                     simon_sequence.step();
-                    std::cout << "Position: " << simon_sequence.get_num_steps() << ", n-1: " << simon_sequence.get_length()-1 << std::endl; 
-                    //iter_time_out=0;
+                    std::cout << "Position: " << simon_sequence.get_num_steps() << ", n-1: " << simon_sequence.get_length()-1 << std::endl;
+                    //Reset time out
+                    iter_time_out=0;
                     printf("CORRECT BUTTON!\n");
                     if(simon_sequence.is_finished()) {
                         printf("SEQUENCE COMPLETED!!\n");
@@ -192,7 +193,7 @@ void *introduce_thread(void *param) {
             }
         }
 
-        if(simon_buttons_in.read_button(SimonButtons::COLOR::INIT)) {
+        if(simon_buttons_in.get_set_interruption(rising_edge_init)) {
             printf("INIT BUTTON PRESSED!!!\n");
             stateManager.changeState(INIT_STATE);
             for(int i=0; i<4; i++)
@@ -211,13 +212,13 @@ void *introduce_thread(void *param) {
         }
 
         //Read pause button
-        bool pause_status = simon_buttons_in.read_button(SimonButtons::COLOR::PAUSE);
+        //bool pause_status = simon_buttons_in.read_button(SimonButtons::COLOR::PAUSE);
         if(simon_buttons_in.get_set_interruption(rising_edge_pause)) {
             stateManager.changeState(PAUSE_STATE);
             pause_pre_st = false;
             continue;
         }
-        pause_pre_st = pause_status;
+        //pause_pre_st = pause_status;
         usleep(100000);
     }
 }
@@ -280,10 +281,11 @@ void *dial_velocity_thread(void *param) {
     for(;;) {
         int state = stateManager.waitState(cfgPassed);
         int value = simon_dial_difficulty.get_value();
-        //std::cout << "Dificulty value: " << value << std::endl;
+        
         vel_show = 1172.16*value + 1000000/5;
+        std::cout << "Dificulty value (show velocity): " << vel_show << std::endl;
         simon_dial_difficulty.set_pot_position();
-        usleep(1000);
+        usleep(100000);
     } 
 }
 
@@ -294,10 +296,11 @@ void *dial_difficulty_thread(void *param) {
     for(;;) {
         int state = stateManager.waitState(cfgPassed);
         int value = simon_dial_velocity.get_value();
-        //std::cout << "Velocity value: " << value << std::endl;
+        
         time_out = 0.0225*value + 10;
+        std::cout << "Time out value: " << value << std::endl;
         simon_dial_velocity.set_pot_position();
-        usleep(1000);
+        usleep(100000);
     } 
 }
 
@@ -349,6 +352,10 @@ void *pause_game(int stFrom, int stTo) {
 }
 
 void *init_game(int stFrom, int stTo) {
+
+    rising_edge_init = false;
+    rising_edge_pause = false;
+
     simon_leds_out.turn_all_on();
     sleep(2);
     simon_leds_out.turn_all_off();
