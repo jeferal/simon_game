@@ -227,16 +227,12 @@ void *pause_thread(void *param) {
     ThreadConf *cfgPassed = (ThreadConf*)param;
     long longPassed = (long) cfgPassed->getArg();
 
-    bool init_pre = false;
-
     for (;;) {
         int state = stateManager.waitState(cfgPassed);
         std::cout << "PAUSE THREAD" << std::endl;
 
         //Read pause button
-        bool pause_status = simon_buttons_in.read_button(SimonButtons::COLOR::PAUSE);
         if(simon_buttons_in.get_set_interruption(rising_edge_pause)) {
-            pause_pre_st = pause_status;
             //Go to the previous state
             std::cout << "Previous State: " << stateManager.getPreviousState() << std::endl;
             stateManager.changeState(stateManager.getPreviousState());
@@ -244,9 +240,7 @@ void *pause_thread(void *param) {
         }
 
         //Check also init button
-        bool init_status = simon_buttons_in.read_button(SimonButtons::COLOR::INIT);
-        if(init_status == true && init_pre == false) {
-            init_pre = false;
+        if(simon_buttons_in.get_set_interruption(rising_edge_init)) {
             //Go to init state
             simon_sequence.reset();
             //Reset time out
@@ -254,10 +248,7 @@ void *pause_thread(void *param) {
             stateManager.changeState(INIT_STATE);
             continue;
         }
-
         usleep(100000);
-
-        pause_pre_st = pause_status;
     }
 }
 
