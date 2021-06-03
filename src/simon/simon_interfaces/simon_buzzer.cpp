@@ -36,13 +36,6 @@ void SimonBuzzer::show_starting_game() {
     pwm_buzzer->run();
 }
 
-void SimonBuzzer::show_start(unsigned int period) {
-    pwm_buzzer->setPeriod(PERIOD_STARTING_GAME);
-    pwm_buzzer->setDutyCycle((unsigned int)PERIOD_STARTING_GAME/2);
-
-    pwm_buzzer->run();
-}
-
 void SimonBuzzer::show_stop() {
     pwm_buzzer->stop();
 }

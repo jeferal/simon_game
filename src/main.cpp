@@ -119,7 +119,6 @@ void *show_thread(void *param) {
         }
 
         //Read pause button
-        bool pause_status = simon_buttons_in.read_button(SimonButtons::COLOR::PAUSE);
         if(simon_buttons_in.get_set_interruption(rising_edge_pause)) {
             stateManager.changeState(PAUSE_STATE);
             pause_pre = false;
@@ -297,7 +296,7 @@ void *success_game(int stFrom, int stTo) {
     sleep(1);
     simon_leds_out.turn_all_off();
 
-    simon_buzzer.show_start(PERIOD_SUCCESS);
+    simon_buzzer.show_success();
 
     if(use_leds) {
         simon_led_strip.success_game();
@@ -338,7 +337,7 @@ void *starting_game(int stFrom, int stTo) {
     //Turn all leds to say that game starts
     std::cout << "INTRODUCE THE SEQUENCE!!" << std::endl;
     simon_buzzer.show_starting_game();
-    sleep(2);
+    usleep(1400000);
     simon_buzzer.show_stop();
 }
 
@@ -362,7 +361,12 @@ void *init_game(int stFrom, int stTo) {
 
 int main(int argc, char *argv[]) {
 
-    use_leds = false;
+    if(argc == 2) {
+        if(strcmp("-l",argv[1])==0) {
+            use_leds = true;
+            std::cout << "Using leds" << std::endl;
+        }
+    }
 
     std::cout << "Starting program" << std::endl;
 

@@ -4,11 +4,13 @@
 
 SimonSequence::SimonSequence() {
     current_sequence = new std::vector<SimonLeds::COLOR>(MAX_SEQUENCE);
+    srand (time(NULL));
 }
 
 void SimonSequence::reset() {
     position = 0;
     n=1;
+    srand (time(NULL));
 }
 
 void SimonSequence::reset_position() {
