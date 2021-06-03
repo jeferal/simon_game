@@ -1,6 +1,6 @@
 # simon_game
 
-This is the project of a Simon game implemented on a Beagle Bone Black
+This is the project of a Simon game implemented on a Beagle Bone Black.
 
 ![Simon Game](https://github.com/jeferrandiz98/simon_game/blob/master/imgs/simon_machine.jpeg?raw=true)
 
@@ -8,8 +8,8 @@ This is the project of a Simon game implemented on a Beagle Bone Black
 
 ## Compilation
 
-It is required to build this project with arm-linux-gnueabihf-g++-8 compiler
-In the makefile the configuration of the ssh cross-compilation can be modified (IP address of the BBB)
+It is required to build this project with arm-linux-gnueabihf-g++-8 compiler.
+In the makefile the configuration of the ssh cross-compilation can be modified (IP address of the BBB).
 
 ```bash
 make clean all
