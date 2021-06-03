@@ -2,9 +2,9 @@
 
 This is the project of a Simon game implemented on a Beagle Bone Black
 
-![Simon Game](https://github.com/jeferrandiz98/jeferrandiz98/blob/main/imgs/simon_machine.jpeg?raw=true)
+![Simon Game](https://github.com/jeferrandiz98/jeferrandiz98/blob/master/imgs/simon_machine.jpeg?raw=true)
 
-![Beagle Bone Black](https://github.com/jeferrandiz98/jeferrandiz98/blob/main/imgs/beagle_bone_black.jpg?raw=true)
+![Beagle Bone Black](https://github.com/jeferrandiz98/jeferrandiz98/blob/master/imgs/beagle_bone_black.jpg?raw=true)
 
 ## Compilation
 
