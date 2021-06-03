@@ -4,7 +4,7 @@ This is the project of a Simon game implemented on a Beagle Bone Black
 
 ![Simon Game](https://github.com/jeferrandiz98/simon_game/blob/master/imgs/simon_machine.jpeg?raw=true)
 
-![Beagle Bone Black](https://github.com/jeferrandiz98/simon_game/blob/master/imgs/beagle_bone_black.jpg.jpg?raw=true)
+![Beagle Bone Black](https://github.com/jeferrandiz98/simon_game/blob/master/imgs/beagle_bone_black.jpg?raw=true)
 
 ## Compilation
 
