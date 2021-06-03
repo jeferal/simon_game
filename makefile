@@ -12,7 +12,7 @@ BBB_IP = 192.168.1.111
 BBB_USR = root
 BBB_TARGET_DIR = targets
 
-all: build/project
+all: ${OUT_DIR}/${OUT_NAME}
 
 build/project:
 	${MKDIR_P} ${OUT_DIR}
@@ -21,4 +21,4 @@ build/project:
 
 .PHONY: clean
 clean:
-	@rm -f ./build/project
+	@rm -f ./${OUT_DIR}/${OUT_NAME}
