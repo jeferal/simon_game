@@ -14,7 +14,7 @@ BBB_TARGET_DIR = targets
 
 all: ${OUT_DIR}/${OUT_NAME}
 
-build/project:
+${OUT_DIR}/${OUT_NAME}:
 	${MKDIR_P} ${OUT_DIR}
 	${CC} ${main} ${src_deps} $(libs) -o ${OUT_DIR}/${OUT_NAME}
 	scp ${OUT_DIR}/${OUT_NAME} ${BBB_USR}@${BBB_IP}:/${BBB_USR}/${BBB_TARGET_DIR}/ 
